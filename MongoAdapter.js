@@ -3,6 +3,7 @@ var _ = require('underscore');
 _.str = require('underscore.string');
 var mongodb = require('mongodb');
 var mongoClient = mongodb.MongoClient;
+var objectId = mongodb.ObjectID;
 
 module.exports = (function() {
 
@@ -10,7 +11,7 @@ module.exports = (function() {
   var dbs = {};
 
   var adapter = {
-    syncable: true,
+    syncable: false,
 
     registerCollection: function(collection, cb) {
       var self = this;
@@ -77,6 +78,7 @@ module.exports = (function() {
     find: function(collectionName, options, cb) {
       spawnConnection(function(connection, cb) {
         var collection = connection.collection(collectionName);
+        options = rewriteCriteria(options);
         collection.find.apply(collection, parseFindOptions(options)).toArray(function(err, docs) {
           cb(err, docs);
         });
@@ -129,6 +131,19 @@ module.exports = (function() {
 
   function parseFindOptions(options) {
     return [options.where, _.omit(options, 'where')];
+  }
+
+  function rewriteCriteria(options) {
+    if (options.where) {
+      if (options.where.id && !options.where._id) {
+        options.where._id = options.where.id;
+        delete options.where.id;
+      }
+      if (options.where._id && _.isString(options.where._id)) {
+        options.where._id = new objectId(options.where._id);
+      }
+    }
+    return options;
   }
 
   return adapter;
