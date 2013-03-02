@@ -86,10 +86,19 @@ module.exports = (function() {
     },
 
     update: function(collectionName, options, values, cb) {
+      var that = this;
+
       spawnConnection(function(connection, cb) {
+        options = rewriteCriteria(options);
         var collection = connection.collection(collectionName);
-        collection.update(options, values, function(err, result) {
-          cb(err, result);
+        collection.update(options.where, { $set: values }, { raw: true, multi: true }, function(err, result) {
+          if (!err) {
+            that.find(collectionName, options, function(err, docs) {
+              cb(err, docs);
+            });
+          } else {
+            cb(err, result);
+          }
         });
       }, dbs[collectionName], cb);
     },
