@@ -86,7 +86,7 @@ module.exports = (function() {
       spawnConnection(function(connection, cb) {
         var collection = connection.collection(collectionName);
         collection.update(options, values, function(err, result) {
-          cb(err, model);
+          cb(err, result);
         });
       }, dbs[collectionName], cb);
     },
@@ -95,7 +95,7 @@ module.exports = (function() {
       spawnConnection(function(connection, cb) {
         var collection = connection.collection(collectionName);
         collection.remove(options, function(err, result) {
-          cb(err, model);
+          cb(err, result);
         });
       }, dbs[collectionName], cb);
     },
