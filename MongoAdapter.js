@@ -4,6 +4,10 @@ _.str = require('underscore.string');
 var mongodb = require('mongodb');
 
 module.exports = (function() {
+
+  // Keep track of all the dbs used by the app
+  var dbs = {};
+
   var adapter = {
     syncable: true,
 
@@ -19,7 +23,9 @@ module.exports = (function() {
       // Otherwise initialize for the first time
       if (!dbs[collection.identity]) {
         dbs[collection.identity] = marshalConfig(collection);
-      } else return cb();
+      }
+
+      return cb();
     },
 
     teardown: function(cb) {
@@ -52,7 +58,7 @@ module.exports = (function() {
     create: function(collectionName, data, cb) {
       spawnConnection(function(connection, cb) {
         var collection = connection.collection(collectionName);
-        colleciton.insert(data, function(err, result) {
+        collection.insert(data, function(err, result) {
           if (err) return cb(err);
 
           // Build model to return
@@ -68,12 +74,30 @@ module.exports = (function() {
     },
 
     find: function(collectionName, options, cb) {
+      spawnConnection(function(connection, cb) {
+        var collection = connection.collection(collectionName);
+        collection.find.apply(collection, parseFindOptions(options)).toArray(function(err, docs) {
+          cb(err, docs);
+        });
+      }, dbs[collectionName], cb);
     },
 
     update: function(collectionName, options, values, cb) {
+      spawnConnection(function(connection, cb) {
+        var collection = connection.collection(collectionName);
+        collection.update(options, values, function(err, result) {
+          cb(err, model);
+        });
+      }, dbs[collectionName], cb);
     },
 
     destroy: function(collectionName, options, cb) {
+      spawnConnection(function(connection, cb) {
+        var collection = connection.collection(collectionName);
+        collection.remove(options, function(err, result) {
+          cb(err, model);
+        });
+      }, dbs[collectionName], cb);
     },
 
     identity: 'sails-mongo'
@@ -81,7 +105,7 @@ module.exports = (function() {
 
   function spawnConnection(logic, config, cb) {
     var marshalledConfig = marshalConfig(config);
-    var connection = new mongodb.Db(marshalledConfig.database, new mongodb.Server(marshalledConfig.hostname, marshalledConfig.port, {}), {w: 1});
+    var connection = new mongodb.Db(marshalledConfig.database, new mongodb.Server(marshalledConfig.host, marshalledConfig.port, {}), {w: 1});
     connection.open(function(err) {
       afterwards(err, connection);
     });
@@ -107,4 +131,10 @@ module.exports = (function() {
       database : config.database
     });
   }
+
+  function parseFindOptions(options) {
+    return [options.where, _.omit(options, 'where')];
+  }
+
+  return adapter;
 })();
