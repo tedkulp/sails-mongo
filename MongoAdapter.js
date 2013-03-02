@@ -2,6 +2,7 @@ var async = require('async');
 var _ = require('underscore');
 _.str = require('underscore.string');
 var mongodb = require('mongodb');
+var mongoClient = mongodb.MongoClient;
 
 module.exports = (function() {
 
@@ -104,16 +105,14 @@ module.exports = (function() {
   };
 
   function spawnConnection(logic, config, cb) {
-    var marshalledConfig = marshalConfig(config);
-    var connection = new mongodb.Db(marshalledConfig.database, new mongodb.Server(marshalledConfig.host, marshalledConfig.port, {}), {w: 1});
-    connection.open(function(err) {
-      afterwards(err, connection);
+    mongoClient.connect(config.url, function(err, db) {
+      afterwards(err, db);
     });
 
-    function afterwards(err, connection) {
+    function afterwards(err, db) {
       if (err) return cb(err);
-      logic(connection, function(err, result) {
-        connection.close();
+      logic(db, function(err, result) {
+        db.close();
         cb && cb(err, result);
       });
     }
@@ -124,11 +123,7 @@ module.exports = (function() {
 
   function marshalConfig(config) {
     return _.extend(config, {
-      host     : config.host,
-      port     : config.port,
-      user     : config.user,
-      password : config.password,
-      database : config.database
+      url : config.url
     });
   }
 
