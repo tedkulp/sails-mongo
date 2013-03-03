@@ -91,7 +91,7 @@ module.exports = (function() {
       spawnConnection(function(connection, cb) {
         options = rewriteCriteria(options);
         var collection = connection.collection(collectionName);
-        collection.update(options.where, { $set: values }, { raw: true, multi: true }, function(err, result) {
+        collection.update(options.where, { $set: values }, { multi: true }, function(err, result) {
           if (!err) {
             that.find(collectionName, options, function(err, docs) {
               cb(err, docs);
@@ -105,8 +105,9 @@ module.exports = (function() {
 
     destroy: function(collectionName, options, cb) {
       spawnConnection(function(connection, cb) {
+        options = rewriteCriteria(options);
         var collection = connection.collection(collectionName);
-        collection.remove(options, function(err, result) {
+        collection.remove(options.where, function(err, result) {
           cb(err, result);
         });
       }, dbs[collectionName], cb);
