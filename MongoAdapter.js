@@ -67,8 +67,11 @@ module.exports = (function() {
           var model = _.extend({}, data, {
 
             // TODO: look up the autoIncrement attribute and increment that instead of assuming `id`
-            id: result._id
+            id: result[0]._id
           });
+
+          if (model._id)
+            delete model._id;
 
           cb(err, model);
         });
@@ -80,7 +83,7 @@ module.exports = (function() {
         var collection = connection.collection(collectionName);
         options = rewriteCriteria(options);
         collection.find.apply(collection, parseFindOptions(options)).toArray(function(err, docs) {
-          cb(err, docs);
+          cb(err, rewriteIds(docs));
         });
       }, dbs[collectionName], cb);
     },
@@ -154,6 +157,16 @@ module.exports = (function() {
       }
     }
     return options;
+  }
+
+  function rewriteIds(models) {
+    return _.map(models, function(model) {
+      if (model._id) {
+        model.id = model._id;
+        delete model._id;
+      }
+      return model;
+    });
   }
 
   return adapter;
