@@ -155,6 +155,15 @@ module.exports = (function() {
       if (options.where._id && _.isString(options.where._id)) {
         options.where._id = new objectId(options.where._id);
       }
+
+      // Rewrite false and true if they come through. Not sure if there
+      // is a better way to do this or not.
+      _.each(options.where, function(val, key) {
+        if (val === "false")
+          options.where[key] = false;
+        if (val === "true")
+          options.where[key] = true;
+      });
     }
     return options;
   }
