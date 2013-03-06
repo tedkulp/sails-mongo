@@ -156,16 +156,24 @@ module.exports = (function() {
         options.where._id = new objectId(options.where._id);
       }
 
-      // Rewrite false and true if they come through. Not sure if there
-      // is a better way to do this or not.
-      _.each(options.where, function(val, key) {
-        if (val === "false")
-          options.where[key] = false;
-        if (val === "true")
-          options.where[key] = true;
-      });
+      parseTypes(options.where);
     }
     return options;
+  }
+
+  function parseTypes(obj) {
+    // Rewrite false and true if they come through. Not sure if there
+    // is a better way to do this or not.
+    _.each(obj, function(val, key) {
+      if (val === "false")
+        obj[key] = false;
+      else if (val === "true")
+        obj[key] = true;
+      else if (!_.isNaN(Date.parse(val)))
+        obj[key] = new Date(val);
+      else if (_.isObject(val))
+        parseTypes(val); // Nested objects...
+    });
   }
 
   function rewriteIds(models) {
