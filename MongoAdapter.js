@@ -60,7 +60,7 @@ module.exports = (function() {
     create: function(collectionName, data, cb) {
       spawnConnection(function(connection, cb) {
         var collection = connection.collection(collectionName);
-        collection.insert(parseTypes(data), function(err, result) {
+        collection.insert(data, function(err, result) {
           if (err) return cb(err);
 
           // Build model to return
@@ -94,7 +94,7 @@ module.exports = (function() {
       spawnConnection(function(connection, cb) {
         options = rewriteCriteria(options);
         var collection = connection.collection(collectionName);
-        collection.update(options.where, { $set: parseTypes(values) }, { multi: true }, function(err, result) {
+        collection.update(options.where, { $set: values }, { multi: true }, function(err, result) {
           if (!err) {
             that.find(collectionName, options, function(err, docs) {
               cb(err, docs);
